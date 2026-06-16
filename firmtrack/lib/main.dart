@@ -11,6 +11,8 @@ import 'features/labour/screens/labour_list_screen.dart';
 import 'features/labour/screens/labour_form_screen.dart';
 import 'features/labour/screens/labour_attendance_screen.dart';
 import 'features/labour/screens/labour_payment_screen.dart';
+import 'features/production/screens/production_list_screen.dart';
+import 'features/production/screens/production_form_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +62,8 @@ class FirmTrackApp extends StatelessWidget {
         '/labour-form': (context) => const LabourFormScreen(),
         '/labour-attendance': (context) => const LabourAttendanceScreen(),
         '/labour-payment': (context) => const LabourPaymentScreen(),
+        '/production-list': (context) => const ProductionListScreen(),
+        '/production-form': (context) => const ProductionFormScreen(),
       },
     );
   }
