@@ -7,6 +7,10 @@ import 'features/inventory/screens/stock_list_screen.dart';
 import 'features/inventory/screens/stock_in_screen.dart';
 import 'features/customers/screens/customer_list_screen.dart';
 import 'features/customers/screens/customer_form_screen.dart';
+import 'features/labour/screens/labour_list_screen.dart';
+import 'features/labour/screens/labour_form_screen.dart';
+import 'features/labour/screens/labour_attendance_screen.dart';
+import 'features/labour/screens/labour_payment_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +56,10 @@ class FirmTrackApp extends StatelessWidget {
         '/stock-in': (context) => const StockInScreen(),
         '/customer-list': (context) => const CustomerListScreen(),
         '/customer-form': (context) => const CustomerFormScreen(),
+        '/labour-list': (context) => const LabourListScreen(),
+        '/labour-form': (context) => const LabourFormScreen(),
+        '/labour-attendance': (context) => const LabourAttendanceScreen(),
+        '/labour-payment': (context) => const LabourPaymentScreen(),
       },
     );
   }
