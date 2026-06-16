@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'core/database/database_helper.dart';
 import 'features/company_settings/screens/company_settings_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
+import 'features/inventory/screens/stock_list_screen.dart';
+import 'features/inventory/screens/stock_in_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +46,8 @@ class FirmTrackApp extends StatelessWidget {
       routes: {
         '/company_settings': (context) => const CompanySettingsScreen(),
         '/dashboard': (context) => const DashboardScreen(),
+        '/stock-list': (context) => const StockListScreen(),
+        '/stock-in': (context) => const StockInScreen(),
       },
     );
   }
