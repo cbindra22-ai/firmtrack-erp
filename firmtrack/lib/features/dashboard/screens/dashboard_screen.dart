@@ -247,12 +247,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _QuickActionButton(
                 icon: Icons.add_circle_outline,
                 label: 'New Invoice',
-                onTap: () {
-                  // TODO Step 10 — Navigator.pushNamed(context, '/invoice_form')
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Invoice module coming soon')),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, '/invoice-form').then((_) => _loadDashboardData()),
               ),
             ),
             const SizedBox(width: 10),
@@ -260,12 +255,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _QuickActionButton(
                 icon: Icons.inventory_2_outlined,
                 label: 'Add Stock',
-                onTap: () {
-                  // TODO Step 6 — Navigator.pushNamed(context, '/stock_add')
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Stock module coming soon')),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, '/stock-in').then((_) => _loadDashboardData()),
               ),
             ),
           ],
@@ -277,12 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _QuickActionButton(
                 icon: Icons.payments_outlined,
                 label: 'Add Payment',
-                onTap: () {
-                  // TODO Step 11 — Navigator.pushNamed(context, '/payment_form')
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Payment module coming soon')),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, '/payment-form').then((_) => _loadDashboardData()),
               ),
             ),
             const SizedBox(width: 10),
@@ -290,12 +275,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _QuickActionButton(
                 icon: Icons.money_off_outlined,
                 label: 'Add Expense',
-                onTap: () {
-                  // TODO Step 12 — Navigator.pushNamed(context, '/expense_form')
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Expense module coming soon')),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, '/expense-form').then((_) => _loadDashboardData()),
               ),
             ),
           ],
@@ -374,14 +354,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       fontWeight: FontWeight.bold,
                       fontSize: 14),
                 ),
-                onTap: () {
-                  // TODO Step 6 — Navigate to StockDetailScreen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            'Stock detail for ${item['name']} — coming soon')),
-                  );
-                },
+                onTap: () => Navigator.pushNamed(context, '/stock-list'),
               );
             },
           ),
