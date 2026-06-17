@@ -49,7 +49,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
         final row = result.first;
         setState(() {
           _existingId = row['id'] as int?;
-          _nameController.text = (row['name'] as String?) ?? '';
+          _nameController.text = (row['company_name'] as String?) ?? '';
           _phoneController.text = (row['phone'] as String?) ?? '';
           _addressController.text = (row['address'] as String?) ?? '';
           _prefixController.text = (row['invoice_prefix'] as String?) ?? 'INV';
@@ -74,11 +74,10 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
       final db = await DatabaseHelper.instance.database;
 
       final data = {
-        'name': _nameController.text.trim(),
+        'company_name': _nameController.text.trim(),
         'phone': _phoneController.text.trim(),
         'address': _addressController.text.trim(),
         'invoice_prefix': _prefixController.text.trim().toUpperCase(),
-        'updated_at': DateTime.now().toIso8601String(),
       };
 
       if (_existingId != null) {
