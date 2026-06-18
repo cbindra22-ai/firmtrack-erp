@@ -11,6 +11,8 @@ import 'features/labour/screens/labour_list_screen.dart';
 import 'features/labour/screens/labour_form_screen.dart';
 import 'features/labour/screens/labour_attendance_screen.dart';
 import 'features/labour/screens/labour_payment_screen.dart';
+import 'features/labour/screens/labour_detail_screen.dart';
+import 'features/labour/screens/piece_rate_screens.dart';
 import 'features/production/screens/production_list_screen.dart';
 import 'features/production/screens/production_form_screen.dart';
 import 'features/invoices/screens/invoice_list_screen.dart';
@@ -75,6 +77,9 @@ class FirmTrackApp extends StatelessWidget {
         '/labour-form': (context) => const LabourFormScreen(),
         '/labour-attendance': (context) => const LabourAttendanceScreen(),
         '/labour-payment': (context) => const LabourPaymentScreen(),
+        '/labour-detail': (context) => const LabourDetailScreen(),
+        '/piece-rate-card': (context) => const PieceRateCardScreen(),
+        '/piece-rate-form': (context) => const PieceRateFormScreen(),
         '/production-list': (context) => const ProductionListScreen(),
         '/production-form': (context) => const ProductionFormScreen(),
         '/invoice-list': (context) => const InvoiceListScreen(),

@@ -227,7 +227,7 @@ class _LabourListScreenState extends State<LabourListScreen> {
                                 onTap: () async {
                                   await Navigator.pushNamed(
                                     context,
-                                    '/labour-form',
+                                    '/labour-detail',
                                     arguments: labour,
                                   );
                                   _loadLabour();
