@@ -5,6 +5,7 @@ import '../../features/products/screens/product_list_screen.dart';
 import '../../features/inventory/screens/stock_list_screen.dart';
 import '../../features/customers/screens/customer_list_screen.dart';
 import '../../features/invoices/screens/invoice_list_screen.dart';
+import '../../features/payments/screens/payment_list_screen.dart';
 import '../../features/expenses/screens/expense_list_screen.dart';
 import '../../features/reports/screens/reports_screen.dart';
 
@@ -24,6 +25,7 @@ class _MainShellState extends State<MainShell> {
     const StockListScreen(),
     const CustomerListScreen(),
     const InvoiceListScreen(),
+    const PaymentListScreen(),
     const ExpenseListScreen(),
     const ReportsScreen(),
   ];
@@ -50,6 +52,7 @@ class _MainShellState extends State<MainShell> {
           BottomNavigationBarItem(icon: Icon(Icons.warehouse), label: 'Stock'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Customers'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Invoices'),
+          BottomNavigationBarItem(icon: Icon(Icons.payments), label: 'Payments'),
           BottomNavigationBarItem(icon: Icon(Icons.money_off), label: 'Expenses'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Reports'),
         ],
