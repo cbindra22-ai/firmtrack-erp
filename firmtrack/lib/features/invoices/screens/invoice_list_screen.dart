@@ -160,6 +160,10 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                             child: ListTile(
+                              onTap: () async {
+                                await Navigator.pushNamed(context, '/invoice-detail', arguments: inv);
+                                _loadInvoices();
+                              },
                               title: Row(
                                 children: [
                                   Text(inv['invoice_number'] ?? '',

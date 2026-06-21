@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
 
@@ -11,45 +12,75 @@ class PaymentFormScreen extends StatefulWidget {
 
 class _PaymentFormScreenState extends State<PaymentFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _amountController = TextEditingController();
-  final _notesController = TextEditingController();
+  final _amountCtrl = TextEditingController();
+  final _referenceCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
+  final DatabaseHelper _db = DatabaseHelper.instance;
 
-  final db = DatabaseHelper.instance;
-  bool _isLoading = false;
-  bool _isInit = false;
-
-  Map<String, dynamic>? _invoice;
-  Map<String, dynamic>? _customer;
+  List<Map<String, dynamic>> _customers = [];
+  int? _selectedCustomerId;
+  double _outstanding = 0.0;
+  double _advance = 0.0;
+  bool _isLoadingCustomers = false;
+  bool _isLoadingSummary = false;
+  bool _isSaving = false;
 
   String _paymentMode = 'Cash';
   DateTime _selectedDate = DateTime.now();
-
   final List<String> _paymentModes = ['Cash', 'UPI', 'Cheque', 'Bank Transfer'];
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInit) {
-      _isInit = true;
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args != null && args is Map<String, dynamic>) {
-        _invoice = args;
-        _loadCustomer();
-      }
-    }
+  void initState() {
+    super.initState();
+    _loadCustomers();
   }
 
-  Future<void> _loadCustomer() async {
-    if (_invoice == null) return;
-    final database = await db.database;
-    final result = await database.query(
-      'customers',
-      where: 'id = ?',
-      whereArgs: [_invoice!['customer_id']],
-    );
-    if (result.isNotEmpty) {
-      setState(() => _customer = result.first);
-    }
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    _referenceCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCustomers() async {
+    setState(() => _isLoadingCustomers = true);
+    final db = await _db.database;
+    final rows = await db.query('customers', orderBy: 'name ASC');
+    setState(() {
+      _customers = rows;
+      _isLoadingCustomers = false;
+    });
+  }
+
+  Future<void> _loadCustomerSummary(int customerId) async {
+    setState(() => _isLoadingSummary = true);
+    final db = await _db.database;
+
+    final outRows = await db.rawQuery(
+      'SELECT COALESCE(SUM(balance), 0) as total FROM invoices '
+      'WHERE customer_id = ? AND status IN (?, ?)',
+      [customerId, 'Unpaid', 'Partially Paid']);
+    final outstanding = (outRows.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    final totalPaidRows = await db.rawQuery(
+      'SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE customer_id = ?',
+      [customerId]);
+    final totalPaid = (totalPaidRows.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    final totalInvRows = await db.rawQuery(
+      'SELECT COALESCE(SUM(total_amount), 0) as total FROM invoices '
+      'WHERE customer_id = ? AND status != ?',
+      [customerId, 'Cancelled']);
+    final totalInv = (totalInvRows.first['total'] as num?)?.toDouble() ?? 0.0;
+
+    final advance = (totalPaid - totalInv) > 0 ? (totalPaid - totalInv) : 0.0;
+
+    setState(() {
+      _outstanding = outstanding;
+      _advance = advance;
+      _isLoadingSummary = false;
+    });
   }
 
   Future<void> _pickDate() async {
@@ -63,165 +94,170 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
   }
 
   Future<void> _savePayment() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_invoice == null) return;
-
-    final amount = double.parse(_amountController.text.trim());
-    final balance = (_invoice!['balance_amount'] as num).toDouble();
-
-    if (amount > balance) {
+    if (_selectedCustomerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Amount cannot exceed invoice balance'), backgroundColor: Colors.red),
-      );
+        const SnackBar(content: Text('Please select a customer'),
+          backgroundColor: Colors.red));
       return;
     }
-
-    setState(() => _isLoading = true);
-
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
     try {
-      final database = await db.database;
+      final db = await _db.database;
+      final double amount = double.parse(_amountCtrl.text.trim());
+      final String date = DateFormat('yyyy-MM-dd').format(_selectedDate);
+      final int customerId = _selectedCustomerId!;
 
-      await database.transaction((txn) async {
+      await db.transaction((txn) async {
         await txn.insert('payments', {
-          'invoice_id': _invoice!['id'],
-          'customer_id': _invoice!['customer_id'],
+          'customer_id': customerId,
           'amount': amount,
+          'payment_date': date,
           'payment_mode': _paymentMode,
-          'payment_date': DateFormat('yyyy-MM-dd').format(_selectedDate),
-          'notes': _notesController.text.trim(),
-          'created_at': DateTime.now().toIso8601String(),
+          'reference_number': _referenceCtrl.text.trim().isEmpty
+            ? null : _referenceCtrl.text.trim(),
+          'notes': _notesCtrl.text.trim().isEmpty
+            ? null : _notesCtrl.text.trim(),
         });
 
-        final newBalance = balance - amount;
-        final newStatus = newBalance <= 0 ? 'Paid' : 'Partially Paid';
-
-        await txn.update(
+        // BR-PAY-01 auto allocate oldest unpaid invoices first
+        final invoices = await txn.query(
           'invoices',
-          {'balance_amount': newBalance, 'status': newStatus},
-          where: 'id = ?',
-          whereArgs: [_invoice!['id']],
-        );
+          where: 'customer_id = ? AND status IN (?, ?)',
+          whereArgs: [customerId, 'Unpaid', 'Partially Paid'],
+          orderBy: 'invoice_date ASC');
 
-        final custBalance = (_customer!['outstanding_balance'] as num).toDouble();
-        await txn.update(
-          'customers',
-          {'outstanding_balance': custBalance - amount},
-          where: 'id = ?',
-          whereArgs: [_invoice!['customer_id']],
-        );
+        double remaining = amount;
+        for (final inv in invoices) {
+          if (remaining <= 0) break;
+          final invBalance = (inv['balance'] as num).toDouble();
+          final invPaid = (inv['paid_amount'] as num).toDouble();
+          if (remaining >= invBalance) {
+            await txn.update('invoices', {
+              'paid_amount': invPaid + invBalance,
+              'balance': 0.0,
+              'status': 'Paid',
+            }, where: 'id = ?', whereArgs: [inv['id']]);
+            remaining -= invBalance;
+          } else {
+            await txn.update('invoices', {
+              'paid_amount': invPaid + remaining,
+              'balance': invBalance - remaining,
+              'status': 'Partially Paid',
+            }, where: 'id = ?', whereArgs: [inv['id']]);
+            remaining = 0;
+          }
+        }
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment saved successfully'), backgroundColor: Colors.green),
-        );
+          const SnackBar(content: Text('Payment saved successfully'),
+            backgroundColor: Colors.green));
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: \$e'), backgroundColor: Colors.red),
-        );
+          const SnackBar(content: Text('Failed to save. Please try again.'),
+            backgroundColor: Colors.red));
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSaving = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    _notesController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_invoice == null) {
-      return const Scaffold(body: Center(child: Text('No invoice selected')));
-    }
-
-    final totalAmount = (_invoice!['total_amount'] as num).toDouble();
-    final balanceAmount = (_invoice!['balance_amount'] as num).toDouble();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Record Payment'),
+        title: const Text('Add Payment'),
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                color: const Color(0xFFE3F2FD),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _customer?['name'] ?? '',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Invoice #${_invoice!["invoice_number"]}'),
-                      const SizedBox(height: 4),
-                      Text('Invoice Date: ${_invoice!["invoice_date"]}'),
-                      const Divider(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Total Amount:'),
-                          Text("₹${totalAmount.toStringAsFixed(2)}"),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Balance Due:', style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text(
-                            "₹${balanceAmount.toStringAsFixed(2)}",
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
-                          ),
-                        ],
-                      ),
-                    ],
+              _isLoadingCustomers
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<int>(
+                    value: _selectedCustomerId,
+                    decoration: const InputDecoration(
+                      labelText: 'Select Customer *',
+                      border: OutlineInputBorder(),
+                    ),
+                    hint: const Text('Select customer...'),
+                    items: _customers.map((c) {
+                      return DropdownMenuItem<int>(
+                        value: c['id'] as int,
+                        child: Text(c['name'] as String),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedCustomerId = val;
+                        _outstanding = 0;
+                        _advance = 0;
+                      });
+                      if (val != null) _loadCustomerSummary(val);
+                    },
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+
+              if (_selectedCustomerId != null)
+                _isLoadingSummary
+                  ? const Center(child: CircularProgressIndicator())
+                  : Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF1976D2)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Column(children: [
+                            Text('Outstanding',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                            Text('Rs.${_outstanding.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold,
+                                color: Colors.red, fontSize: 14)),
+                          ]),
+                          Column(children: [
+                            Text('Advance',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                            Text('Rs.${_advance.toStringAsFixed(2)}',
+                              style: const TextStyle(fontWeight: FontWeight.bold,
+                                color: Colors.green, fontSize: 14)),
+                          ]),
+                        ],
+                      ),
+                    ),
+              const SizedBox(height: 12),
+
               TextFormField(
-                controller: _amountController,
+                controller: _amountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
-                  labelText: 'Payment Amount *',
-                  prefixText: '₹ ',
+                  labelText: 'Amount (Rs.) *',
+                  prefixText: 'Rs. ',
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Enter amount';
+                  if (v == null || v.trim().isEmpty) return 'Amount is required';
                   final val = double.tryParse(v.trim());
                   if (val == null || val <= 0) return 'Enter valid amount';
-                  if (val > balanceAmount) return "Cannot exceed balance ₹${balanceAmount.toStringAsFixed(2)}";
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _paymentMode,
-                decoration: const InputDecoration(
-                  labelText: 'Payment Mode *',
-                  border: OutlineInputBorder(),
-                ),
-                items: _paymentModes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                onChanged: (v) => setState(() => _paymentMode = v!),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
               InkWell(
                 onTap: _pickDate,
                 child: InputDecorator(
@@ -233,30 +269,55 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                   child: Text(DateFormat('dd MMM yyyy').format(_selectedDate)),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _notesController,
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField<String>(
+                value: _paymentMode,
                 decoration: const InputDecoration(
-                  labelText: 'Notes (optional)',
+                  labelText: 'Payment Mode *',
+                  border: OutlineInputBorder(),
+                ),
+                items: _paymentModes.map((m) =>
+                  DropdownMenuItem(value: m, child: Text(m))).toList(),
+                onChanged: (v) => setState(() => _paymentMode = v!),
+              ),
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _referenceCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Reference Number',
+                  border: OutlineInputBorder(),
+                  hintText: 'UPI ref / Cheque no (optional)',
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _notesCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 2,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _savePayment,
+                  onPressed: _isSaving ? null : _savePayment,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1976D2),
                     foregroundColor: Colors.white,
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Save Payment', style: TextStyle(fontSize: 16)),
+                  child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Save Payment', style: TextStyle(fontSize: 16)),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

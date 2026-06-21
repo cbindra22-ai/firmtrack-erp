@@ -153,7 +153,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
           'expense_date': date,
           'category': 'Labour Salary',
           'amount': amount,
-          'notes': 'Auto — ${_selectedLabour!['name']}',
+          'note': 'Auto — ${_selectedLabour!['name']}',
           'is_auto': 1,
           'labour_payment_id': paymentId,
         });
