@@ -27,6 +27,12 @@ import 'features/reports/screens/reports_screen.dart';
 import 'features/reports/screens/sales_report_screen.dart';
 import 'features/reports/screens/expense_report_screen.dart';
 import 'features/reports/screens/profit_loss_screen.dart';
+import 'features/reports/screens/stock_report_screen.dart';
+import 'features/reports/screens/customer_outstanding_report_screen.dart';
+import 'features/reports/screens/customer_advance_report_screen.dart';
+import 'features/reports/screens/daily_wage_report_screen.dart';
+import 'features/reports/screens/piece_rate_report_screen.dart';
+import 'features/reports/screens/payment_collection_report_screen.dart';
 import 'shared/widgets/main_shell.dart';
 
 void main() async {
@@ -95,6 +101,12 @@ class FirmTrackApp extends StatelessWidget {
       '/sales-report': (context) => const SalesReportScreen(),
       '/expense-report': (context) => const ExpenseReportScreen(),
       '/profit-loss': (context) => const ProfitLossScreen(),
+      '/stock-report': (context) => const StockReportScreen(),
+      '/customer-outstanding-report': (context) => const CustomerOutstandingReportScreen(),
+      '/customer-advance-report': (context) => const CustomerAdvanceReportScreen(),
+      '/daily-wage-report': (context) => const DailyWageReportScreen(),
+      '/piece-rate-report': (context) => const PieceRateReportScreen(),
+      '/payment-collection-report': (context) => const PaymentCollectionReportScreen(),
       },
     );
   }
