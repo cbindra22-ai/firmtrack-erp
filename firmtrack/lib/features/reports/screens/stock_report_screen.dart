@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/stock_report_pdf_service.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
 
@@ -374,8 +375,54 @@ class _StockReportScreenState extends State<StockReportScreen> {
   }
 
   Widget _buildResult() {
-    if (_selectedOption == 4) return _buildAllSummary();
-    if (_selectedOption == 3) return _buildProductionReport();
+    if (_selectedOption == 4) {
+      return Column(children: [
+        Expanded(child: _buildAllSummary()),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+              label: const Text('Export PDF'),
+              onPressed: () => StockReportPdfService.generateSummaryPdf(
+                context: context,
+                summary: _allProductsSummary,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1976D2),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ]);
+    }
+    if (_selectedOption == 3) {
+      return Column(children: [
+        Expanded(child: _buildProductionReport()),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+              label: const Text('Export PDF'),
+              onPressed: () => StockReportPdfService.generateProductionPdf(
+                context: context,
+                movements: _movements,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1976D2),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ]);
+    }
     return _buildMovementTable();
   }
 
@@ -431,6 +478,29 @@ class _StockReportScreenState extends State<StockReportScreen> {
                   ]);
                 }),
               ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+              label: const Text('Export PDF'),
+              onPressed: () => StockReportPdfService.generateMovementPdf(
+                context: context,
+                productName: _selectedProductName,
+                productUnit: _selectedProductUnit,
+                currentStock: _currentStock,
+                movements: _movements,
+                movementType: _selectedMovementType,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1976D2),
+                foregroundColor: Colors.white,
+              ),
             ),
           ),
         ),
