@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/database/database_helper.dart';
+import '../services/invoice_pdf_service.dart';
 
 class InvoiceDetailScreen extends StatefulWidget {
   const InvoiceDetailScreen({super.key});
@@ -311,6 +312,27 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                   ),
                 ),
               ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+                label: const Text('Download PDF',
+                    style: TextStyle(fontSize: 16)),
+                onPressed: () => InvoicePdfService.generateAndShare(
+                  context: context,
+                  invoice: _invoice!,
+                  customer: _customer,
+                  items: _items,
+                  payments: _payments,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1976D2),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
           ],
         ),

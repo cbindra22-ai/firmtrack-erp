@@ -334,23 +334,23 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                           ),
                         ],
                       ),
-                      DropdownButtonFormField<Map<String, dynamic>>(
-                        value: item['product_id'] != null
-                            ? _products.firstWhere(
-                                (p) => p['id'] == item['product_id'],
-                                orElse: () => _products.first)
-                            : null,
+                      DropdownButtonFormField<int>(
+                        value: item['product_id'] as int?,
                         decoration: const InputDecoration(
                           labelText: 'Product *',
                           border: OutlineInputBorder(),
                         ),
                         items: _products
-                            .map((p) => DropdownMenuItem(
-                                  value: p,
+                            .map((p) => DropdownMenuItem<int>(
+                                  value: p['id'] as int,
                                   child: Text(p['product_name'].toString()),
                                 ))
                             .toList(),
-                        onChanged: (p) => _onProductSelected(i, p),
+                        onChanged: (id) {
+                          if (id == null) return;
+                          final product = _products.firstWhere((p) => p['id'] == id);
+                          _onProductSelected(i, product);
+                        },
                       ),
                       if (item['product_id'] != null)
                         Padding(
