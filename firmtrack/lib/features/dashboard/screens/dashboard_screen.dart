@@ -267,7 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _QuickActionButton(
                 icon: Icons.payments_outlined,
                 label: 'Add Payment',
-                onTap: () => Navigator.pushNamed(context, '/invoice-list').then((_) => _loadDashboardData()),
+                onTap: () => Navigator.pushNamed(context, '/payment-form').then((_) => _loadDashboardData()),
               ),
             ),
             const SizedBox(width: 10),
@@ -276,6 +276,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: Icons.money_off_outlined,
                 label: 'Add Expense',
                 onTap: () => Navigator.pushNamed(context, '/expense-form').then((_) => _loadDashboardData()),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.precision_manufacturing_outlined,
+                label: 'Production',
+                onTap: () => Navigator.pushNamed(context, '/production-list').then((_) => _loadDashboardData()),
               ),
             ),
           ],

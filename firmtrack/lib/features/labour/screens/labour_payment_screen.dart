@@ -14,7 +14,8 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
   final _formKey = GlobalKey<FormState>();
 
   List<Map<String, dynamic>> _labourList = [];
-  Map<String, dynamic>? _selectedLabour;
+  int? _selectedLabourId;
+  Map<String, dynamic> _getSelectedLabour() => _labourList.firstWhere((l) => l['id'] == _selectedLabourId, orElse: () => {});
   List<Map<String, dynamic>> _paymentHistory = [];
 
   final TextEditingController _amountCtrl = TextEditingController();
@@ -116,7 +117,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
   }
 
   Future<void> _savePayment() async {
-    if (_selectedLabour == null) {
+    if (_selectedLabourId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Please select a labour'),
@@ -130,7 +131,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
 
     try {
       final db = await _db.database;
-      final int labourId = _selectedLabour!['id'] as int;
+      final int labourId = _selectedLabourId!;
       final double amount = double.parse(_amountCtrl.text.trim());
       final String date = _dateCtrl.text.trim();
 
@@ -153,7 +154,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
           'expense_date': date,
           'category': 'Labour Salary',
           'amount': amount,
-          'note': 'Auto — ${_selectedLabour!['name']}',
+          'note': 'Auto — ${_getSelectedLabour()['name']}',
           'is_auto': 1,
           'labour_payment_id': paymentId,
         });
@@ -170,7 +171,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
         _notesCtrl.clear();
         _paymentMode = 'Cash';
         _loadLabourSummary(
-            labourId, _selectedLabour!['labour_type'] as String);
+            labourId, _getSelectedLabour()['labour_type'] as String);
       }
     } catch (e) {
       if (mounted) {
@@ -212,22 +213,22 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Labour selector
-            DropdownButtonFormField<Map<String, dynamic>>(
-              value: _selectedLabour,
+            DropdownButtonFormField<int>(
+              value: _selectedLabourId,
               decoration: const InputDecoration(
                 labelText: 'Select Labour *',
                 border: OutlineInputBorder(),
               ),
               items: _labourList.map((l) {
-                return DropdownMenuItem<Map<String, dynamic>>(
-                  value: l,
+                return DropdownMenuItem<int>(
+                  value: l['id'] as int,
                   child: Text(
                       '${l['name']} (${l['labour_type']})'),
                 );
               }).toList(),
               onChanged: (val) {
                 setState(() {
-                  _selectedLabour = val;
+                  _selectedLabourId = val;
                   _paymentHistory = [];
                   _totalEarned = 0;
                   _totalPaid = 0;
@@ -235,7 +236,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
                 });
                 if (val != null) {
                   _loadLabourSummary(
-                      val['id'] as int, val['labour_type'] as String);
+                      val, _labourList.firstWhere((l) => l['id'] == val)['labour_type'] as String);
                 }
               },
               hint: const Text('Select labour...'),
@@ -243,7 +244,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
             const SizedBox(height: 14),
 
             // Balance Summary Card
-            if (_selectedLabour != null)
+            if (_selectedLabourId != null)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -396,7 +397,7 @@ class _LabourPaymentScreenState extends State<LabourPaymentScreen> {
             const SizedBox(height: 20),
 
             // Payment History
-            if (_selectedLabour != null && _paymentHistory.isNotEmpty) ...[
+            if (_selectedLabourId != null && _paymentHistory.isNotEmpty) ...[
               const Text('Payment History',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,

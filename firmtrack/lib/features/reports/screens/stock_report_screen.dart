@@ -200,7 +200,7 @@ class _StockReportScreenState extends State<StockReportScreen> {
 
     // Get stock_in movements
     final stockRows = await db.rawQuery(
-      "SELECT movement_date, movement_type, quantity, reference FROM stock_in WHERE product_id=? $dateFilter $typeFilter ORDER BY movement_date ASC",
+      "SELECT movement_date, movement_type, quantity, reference FROM stock_in WHERE product_id=? AND movement_type != 'Sold' $dateFilter $typeFilter ORDER BY movement_date ASC",
       [pid, ...dateParams],
     );
 
