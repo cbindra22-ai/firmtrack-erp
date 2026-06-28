@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
+import '../services/payment_collection_pdf_service.dart';
 
 class PaymentCollectionReportScreen extends StatefulWidget {
   const PaymentCollectionReportScreen({super.key});
@@ -109,6 +110,27 @@ class _PaymentCollectionReportScreenState extends State<PaymentCollectionReportS
         title: const Text('Payment Collection Report'),
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
+        actions: [
+          if (_hasResult)
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf),
+              tooltip: 'Export PDF',
+              onPressed: () {
+                final from = _fromDate == null ? 'All' : _fromDate!.toString().substring(0, 10);
+                final to = _toDate == null ? 'All' : _toDate!.toString().substring(0, 10);
+                final periodLabel = _fromDate == null ? 'All Dates' : '$from to $to';
+                final customerLabel = _selectedCustomerId == null ? 'All' : _customerList.firstWhere((c) => c['id'] == _selectedCustomerId)['name'].toString();
+                PaymentCollectionPdfService.generateAndShare(
+                  context: context,
+                  periodLabel: periodLabel,
+                  customerLabel: customerLabel,
+                  modeLabel: _selectedMode,
+                  totalAmount: _totalAmount,
+                  rows: _rows,
+                );
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [

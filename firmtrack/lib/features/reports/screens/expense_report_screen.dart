@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
+import '../services/expense_report_pdf_service.dart';
 
 class ExpenseReportScreen extends StatefulWidget {
   const ExpenseReportScreen({super.key});
@@ -106,6 +107,23 @@ class _ExpenseReportScreenState extends State<ExpenseReportScreen> {
         title: const Text('Expense Report'),
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Export PDF',
+            onPressed: () {
+              final range = _getDateRange();
+              final dateLabel = '${range.start.toString().substring(0, 10)} to ${range.end.toString().substring(0, 10)}';
+              ExpenseReportPdfService.generateAndShare(
+                context: context,
+                filterLabel: _selectedFilter,
+                dateRangeLabel: dateLabel,
+                totalExpenses: _totalExpenses,
+                byCategory: _byCategory,
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

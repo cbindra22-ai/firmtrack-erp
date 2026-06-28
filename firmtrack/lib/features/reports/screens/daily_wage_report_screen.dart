@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
+import '../services/daily_wage_report_pdf_service.dart';
 
 class DailyWageReportScreen extends StatefulWidget {
   const DailyWageReportScreen({super.key});
@@ -130,6 +131,24 @@ class _DailyWageReportScreenState extends State<DailyWageReportScreen> {
         title: const Text('Daily Wage Labour Report'),
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
+        actions: [
+          if (_hasResult)
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf),
+              tooltip: 'Export PDF',
+              onPressed: () {
+                final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                final periodLabel = '${months[_selectedMonth-1]} $_selectedYear';
+                final labourLabel = _selectedLabourId == null ? 'All' : _labourList.firstWhere((l) => l['id'] == _selectedLabourId)['name'].toString();
+                DailyWageReportPdfService.generateAndShare(
+                  context: context,
+                  periodLabel: periodLabel,
+                  labourLabel: labourLabel,
+                  rows: _rows,
+                );
+              },
+            ),
+        ],
       ),
       body: Column(
         children: [
