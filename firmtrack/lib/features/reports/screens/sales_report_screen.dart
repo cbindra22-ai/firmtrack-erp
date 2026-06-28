@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
+import '../services/sales_report_pdf_service.dart';
 
 class SalesReportScreen extends StatefulWidget {
   const SalesReportScreen({super.key});
@@ -217,6 +218,34 @@ class _SalesReportScreenState extends State<SalesReportScreen> {
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+                label: const Text('Export PDF'),
+                onPressed: () {
+                  final range = _getDateRange();
+                  final dateLabel = '${range.start.toString().substring(0, 10)} to ${range.end.toString().substring(0, 10)}';
+                  SalesReportPdfService.generateAndShare(
+                    context: context,
+                    filterLabel: _selectedFilter,
+                    dateRangeLabel: dateLabel,
+                    totalSales: _totalSales,
+                    totalPaid: _totalPaid,
+                    totalBalance: _totalBalance,
+                    customerSales: _customerSales,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1976D2),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
+import '../services/customer_outstanding_pdf_service.dart';
 
 class CustomerOutstandingReportScreen extends StatefulWidget {
   const CustomerOutstandingReportScreen({super.key});
@@ -78,6 +79,17 @@ class _CustomerOutstandingReportScreenState extends State<CustomerOutstandingRep
         title: const Text('Customer Outstanding'),
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Export PDF',
+            onPressed: () => CustomerOutstandingPdfService.generateAndShare(
+              context: context,
+              totalOutstanding: _totalOutstanding,
+              rows: _rows,
+            ),
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

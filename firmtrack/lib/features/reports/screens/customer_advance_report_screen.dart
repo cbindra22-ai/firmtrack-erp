@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/database/database_helper.dart';
+import '../services/customer_advance_pdf_service.dart';
 
 class CustomerAdvanceReportScreen extends StatefulWidget {
   const CustomerAdvanceReportScreen({super.key});
@@ -72,6 +73,17 @@ class _CustomerAdvanceReportScreenState extends State<CustomerAdvanceReportScree
         title: const Text('Customer Advance'),
         backgroundColor: const Color(0xFF1976D2),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Export PDF',
+            onPressed: () => CustomerAdvancePdfService.generateAndShare(
+              context: context,
+              totalAdvance: _totalAdvance,
+              rows: _rows,
+            ),
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
