@@ -97,11 +97,10 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
       if (!mounted) return;
 
       if (widget.isFirstSetup) {
-        // First time → go to Dashboard (placeholder for now)
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const _PlaceholderDashboard(),
-          ),
+        // First time → go to real Dashboard
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/dashboard',
+          (route) => false,
         );
       } else {
         // Editing → go back
@@ -285,29 +284,6 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-// Placeholder — will be replaced by real DashboardScreen in Step 3
-class _PlaceholderDashboard extends StatelessWidget {
-  const _PlaceholderDashboard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('FirmTrack ERP')),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.dashboard, size: 64, color: Color(0xFF1565C0)),
-            SizedBox(height: 16),
-            Text('Dashboard — Coming in Step 3',
-                style: TextStyle(fontSize: 16)),
-          ],
         ),
       ),
     );

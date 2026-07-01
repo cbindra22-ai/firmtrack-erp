@@ -74,7 +74,7 @@ class _StockReportScreenState extends State<StockReportScreen> {
   }
 
   Future<void> _loadReport() async {
-    if (_selectedOption != 4 && _selectedProductId == null) {
+    if (_selectedOption != 4 && _selectedOption != 2 && _selectedProductId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a product')),
       );
@@ -294,12 +294,26 @@ class _StockReportScreenState extends State<StockReportScreen> {
                   DropdownButtonFormField<int>(
                     value: _selectedProductId,
                     decoration: const InputDecoration(labelText: 'Select Product', border: OutlineInputBorder(), isDense: true),
-                    items: _products.map((p) => DropdownMenuItem<int>(
-                      value: p['id'] as int,
-                      child: Text(p['product_name'] as String),
-                    )).toList(),
+                    items: [
+                      if (_selectedOption == 2)
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('All Products'),
+                        ),
+                      ..._products.map((p) => DropdownMenuItem<int>(
+                        value: p['id'] as int,
+                        child: Text(p['product_name'] as String),
+                      )),
+                    ],
                     onChanged: (v) {
-                      if (v == null) return;
+                      if (v == null) {
+                        setState(() {
+                          _selectedProductId = null;
+                          _selectedProductName = 'All Products';
+                          _selectedProductUnit = '';
+                        });
+                        return;
+                      }
                       final p = _products.firstWhere((x) => x['id'] == v);
                       setState(() {
                         _selectedProductId = v;
@@ -343,14 +357,38 @@ class _StockReportScreenState extends State<StockReportScreen> {
           if (_selectedOption == 4)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
+              child: Column(
                 children: [
-                  Switch(
-                    value: _showLowStockOnly,
-                    onChanged: (v) => setState(() => _showLowStockOnly = v),
-                    activeColor: const Color(0xFF1976D2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.calendar_today, size: 16),
+                          label: Text(_fromDate == null ? 'From Date' : DateFormat('dd MMM yyyy').format(_fromDate!)),
+                          onPressed: () => _pickDate(true),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.calendar_today, size: 16),
+                          label: Text(_toDate == null ? 'To Date' : DateFormat('dd MMM yyyy').format(_toDate!)),
+                          onPressed: () => _pickDate(false),
+                        ),
+                      ),
+                    ],
                   ),
-                  const Text('Show Low Stock Only'),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Switch(
+                        value: _showLowStockOnly,
+                        onChanged: (v) => setState(() => _showLowStockOnly = v),
+                        activeColor: const Color(0xFF1976D2),
+                      ),
+                      const Text('Show Low Stock Only'),
+                    ],
+                  ),
                 ],
               ),
             ),

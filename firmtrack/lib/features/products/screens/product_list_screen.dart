@@ -30,7 +30,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Future<void> _loadProducts() async {
     setState(() => _isLoading = true);
     final db = await DatabaseHelper.instance.database;
-    final result = await db.query('products', orderBy: 'product_name ASC');
+    final products = await db.query('products', orderBy: 'product_name ASC');
+
+    // Calculate real stock from stock_in table for each product
+    List<Map<String, dynamic>> result = [];
+    for (final p in products) {
+      final stockResult = await db.rawQuery(
+        """SELECT COALESCE(SUM(CASE WHEN movement_type IN ('Purchase','Opening Stock','Manual Addition','Production','Sold Reversed','Consumed Reversed')
+        THEN quantity ELSE -quantity END), 0) as stock
+        FROM stock_in WHERE product_id = ?""",
+        [p['id']],
+      );
+      final stock = (stockResult.first['stock'] as num?)?.toDouble() ?? 0.0;
+      result.add({...p, 'current_stock': stock});
+    }
+
     setState(() {
       _products = result;
       _filtered = result;

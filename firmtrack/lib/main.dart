@@ -73,7 +73,7 @@ class FirmTrackApp extends StatelessWidget {
       ),
       initialRoute: isCompanySetup ? '/dashboard' : '/company_settings',
       routes: {
-        '/company_settings': (context) => const CompanySettingsScreen(),
+        '/company_settings': (context) => const CompanySettingsScreen(isFirstSetup: true),
         '/dashboard': (context) => const MainShell(),
         '/stock-list': (context) => const StockListScreen(),
         '/stock-in': (context) => const StockInScreen(),
