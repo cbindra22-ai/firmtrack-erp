@@ -177,6 +177,65 @@ class _StockReportScreenState extends State<StockReportScreen> {
     }
 
     // Option 1 and Option 2 — product wise movement
+    // If All Products selected in Date Range — use All Summary logic with date filter
+    if (_selectedOption == 2 && _selectedProductId == null) {
+      final products = await db.query('products', orderBy: 'product_name ASC');
+      final list = <Map<String, dynamic>>[];
+      String summaryDateFilter = '';
+      List<dynamic> summaryDateParams = [];
+      if (_fromDate != null && _toDate != null) {
+        summaryDateFilter = 'AND movement_date BETWEEN ? AND ?';
+        summaryDateParams = [_fromDate!.toIso8601String(), _toDate!.toIso8601String()];
+      }
+      for (final p in products) {
+        final pid = p['id'] as int;
+        final unit = p['unit'] as String;
+        final minLevel = (p['min_stock_level'] as num).toDouble();
+        final inRows = await db.rawQuery(
+          "SELECT COALESCE(SUM(quantity),0) as total FROM stock_in WHERE product_id=? AND movement_type IN ('Purchase','Opening Stock','Manual Addition','Production','Sold Reversed','Consumed Reversed') $summaryDateFilter",
+          [pid, ...summaryDateParams],
+        );
+        final totalIn = (inRows.first['total'] as num).toDouble();
+        String soldDateFilter = '';
+        List<dynamic> soldParams = [pid];
+        if (_fromDate != null && _toDate != null) {
+          soldDateFilter = 'AND i.invoice_date BETWEEN ? AND ?';
+          soldParams.addAll([_fromDate!.toIso8601String(), _toDate!.toIso8601String()]);
+        }
+        final soldRows = await db.rawQuery(
+          "SELECT COALESCE(SUM(ii.quantity),0) as total FROM invoice_items ii JOIN invoices i ON ii.invoice_id=i.id WHERE ii.product_id=? AND i.status!='Cancelled' $soldDateFilter",
+          soldParams,
+        );
+        final soldOut = (soldRows.first['total'] as num).toDouble();
+        final consumedRows = await db.rawQuery(
+          "SELECT COALESCE(SUM(lpi.consumed_qty),0) as total FROM labour_production_items lpi JOIN labour_production lp ON lpi.production_id=lp.id WHERE lpi.material_product_id=? AND lp.status='Active'",
+          [pid],
+        );
+        final consumedOut = (consumedRows.first['total'] as num).toDouble();
+        final totalOut = soldOut + consumedOut;
+        final current = totalIn - totalOut;
+        String status = 'OK';
+        if (current <= 0) status = 'CRITICAL';
+        else if (minLevel > 0 && current < minLevel) status = 'LOW';
+        list.add({
+          'product_name': p['product_name'],
+          'unit': unit,
+          'opening': 0.0,
+          'total_in': totalIn,
+          'total_out': totalOut,
+          'current': current,
+          'min_level': minLevel,
+          'status': status,
+        });
+      }
+      setState(() {
+        _allProductsSummary = list;
+        _loading = false;
+        _hasResult = true;
+      });
+      return;
+    }
+
     final pid = _selectedProductId!;
     String dateFilter = '';
     List<dynamic> dateParams = [];
